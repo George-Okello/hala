@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: segsaga-chainlit
+    env: python
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: chainlit run app.py -w
+    envVars:
+      - key: PORT
+        value: 8000  # Render will override this with a real value
+    runtime: python
