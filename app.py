@@ -624,5 +624,5 @@ async def on_dynamic_suggestion_action(action):
         await on_message(cl.Message(content=question))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 10000))
     cl.run(port=port, host="0.0.0.0")
