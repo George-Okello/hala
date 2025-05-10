@@ -9,4 +9,4 @@ services:
     envVars:
       - key: PORT
         value: 8000  # Render will override this with a real value
-    runtime: python
+    runtime: docker
