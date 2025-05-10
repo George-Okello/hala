@@ -1,6 +1,6 @@
 from datetime import datetime
 import json
-
+import os
 import chainlit as cl
 from langchain_core.runnables import RunnableConfig
 
@@ -622,3 +622,7 @@ async def on_dynamic_suggestion_action(action):
 
         # Process the message
         await on_message(cl.Message(content=question))
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    cl.run(port=port, host="0.0.0.0")
