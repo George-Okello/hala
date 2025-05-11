@@ -20,4 +20,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8000
 
 # Default command to run the Chainlit app
-CMD ["chainlit", "run", "main.py", "-w"]
+CMD ["chainlit", "run", "app.py", "-w"]
