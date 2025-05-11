@@ -6,8 +6,8 @@ from agent import setup_runnable
 # Store image paths for visual assets
 CULTURAL_IMAGE_PATH = "trad.jpeg"  # Image 1: Girls playing Hejla
 RULES_IMAGE_PATH = "rules.png"  # Image 2: Illustrated Hejla squares and rules
-HISTORY_IMAGE_PATH = "culture.jpeg"  # Image 3: Historical context of Hejla
-OPENER_IMAGE_PATH = "op.png"  # Opener image
+HISTORY_IMAGE_PATH = "history.gif"  # Image 3: Historical context of Hejla
+OPENER_IMAGE_PATH = "culture.png"  # Opener image
 
 # Quiz questions database
 QUIZ_QUESTIONS = [
