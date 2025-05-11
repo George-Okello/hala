@@ -1,123 +1,86 @@
-from datetime import datetime
-import json
-import os
 import chainlit as cl
 from langchain_core.runnables import RunnableConfig
-
 from agent import setup_runnable
 
 # Store image paths for visual assets
-CULTURAL_IMAGE_PATH = "culture.jpeg"  # Image 1: People playing Seega
-RULES_IMAGE_PATH = "rules.jpeg"  # Image 2: Illustrated Seega board and rules
-HISTORY_IMAGE_PATH = "history.gif"  # Image 3: Historical context of Seega
-OPENER_IMAGE_PATH = "opener.webp"  # Opener image
+CULTURAL_IMAGE_PATH = "trad.jpeg"  # Image 1: Girls playing Hejla
+RULES_IMAGE_PATH = "rules.png"  # Image 2: Illustrated Hejla squares and rules
+HISTORY_IMAGE_PATH = "culture.jpeg"  # Image 3: Historical context of Hejla
+OPENER_IMAGE_PATH = "op.png"  # Opener image
 
 # Quiz questions database
 QUIZ_QUESTIONS = [
     {
         "category": "rules",
-        "question": "What type of game is Seega?",
-        "options": ["Card game", "Strategic board game", "Sports game", "Dice game"],
-        "correct": 1,
-        "level": "novice"
-    },
-    {
-        "category": "history",
-        "question": "In which country is Seega most traditionally associated?",
-        "options": ["Egypt", "Sudan", "Both Egypt and Sudan", "Morocco"],
+        "question": "How many squares are traditionally used in Hejla?",
+        "options": ["4 squares", "6 squares", "8 squares", "10 squares"],
         "correct": 2,
         "level": "novice"
     },
     {
         "category": "rules",
-        "question": "How many pieces does each player start with in traditional Seega?",
-        "options": ["3 pieces", "6 pieces", "12 pieces", "24 pieces"],
-        "correct": 2,
+        "question": "How do you move through the squares in Hejla?",
+        "options": ["Jump with both feet", "Hop on one foot", "Run through", "Walk normally"],
+        "correct": 1,
         "level": "novice"
     },
     {
-        "category": "strategy",
-        "question": "What is the main objective in Seega?",
-        "options": ["Reach the other side", "Capture all opponent's pieces", "Make three in a row",
-                    "Control the center"],
-        "correct": 1,
-        "level": "beginner"
-    },
-    {
-        "category": "board",
-        "question": "What is the traditional board size for Seega?",
-        "options": ["3x3 grid", "5x5 grid", "8x8 grid", "10x10 grid"],
+        "category": "gameplay",
+        "question": "When hopping through squares, what must you do with the square containing the stone?",
+        "options": ["Step on it", "Skip over it", "Pick it up", "Jump twice"],
         "correct": 1,
         "level": "beginner"
     },
     {
         "category": "culture",
-        "question": "What materials are traditionally used to make Seega pieces?",
-        "options": ["Plastic only", "Stones, seeds, or pebbles", "Metal coins", "Paper cutouts"],
-        "correct": 1,
+        "question": "Hejla is traditionally played mostly by:",
+        "options": ["Boys only", "Adults only", "Girls", "Elderly people"],
+        "correct": 2,
+        "level": "novice"
+    },
+    {
+        "category": "equipment",
+        "question": "What can you use to mark squares for Hejla?",
+        "options": ["Chalk or scratching dirt", "Paint", "Tape", "Paper"],
+        "correct": 0,
         "level": "beginner"
     },
     {
         "category": "gameplay",
-        "question": "In Seega, how do pieces typically move?",
-        "options": ["Only diagonally", "Only forward", "Horizontally and vertically, one square at a time",
-                    "In any direction like chess"],
+        "question": "What happens if you step on a line?",
+        "options": ["You get an extra turn", "You lose your turn", "You win", "Nothing happens"],
+        "correct": 1,
+        "level": "intermediate"
+    },
+    {
+        "category": "rules",
+        "question": "What do you do after completing all 8 turns?",
+        "options": ["Start over", "End the game", "Throw stone behind you to create a 'home'", "Switch with another player"],
         "correct": 2,
         "level": "intermediate"
     },
     {
-        "category": "capture",
-        "question": "How are pieces captured in Seega?",
-        "options": ["By jumping over them", "By surrounding them", "By reaching them",
-                    "There is no capturing in Seega"],
-        "correct": 1,
-        "level": "intermediate"
+        "category": "strategy",
+        "question": "What can you do when you have a 'home' square?",
+        "options": ["Rest both feet", "Impose rules on other players", "Both A and B", "Nothing special"],
+        "correct": 2,
+        "level": "advanced"
     },
     {
-        "category": "history",
-        "question": "Seega is related to which ancient game?",
-        "options": ["Chess", "Nine Men's Morris/Mill", "Backgammon", "Go"],
-        "correct": 1,
-        "level": "intermediate"
+        "category": "equipment",
+        "question": "Which of these CANNOT be used as a throwing object in Hejla?",
+        "options": ["Stone", "Coin", "Large ball", "Button"],
+        "correct": 2,
+        "level": "beginner"
     },
     {
-        "category": "cultural_impact",
-        "question": "What social role does Seega play in Sudanese culture?",
-        "options": ["Only played in formal tournaments", "Community gathering and strategic thinking development",
-                    "Religious ceremonies only", "Educational tool for mathematics only"],
-        "correct": 1,
+        "category": "social",
+        "question": "What makes Hejla a good community game?",
+        "options": ["It's expensive", "It requires special equipment", "It's accessible anywhere with simple materials", "It's only for professionals"],
+        "correct": 2,
         "level": "advanced"
     }
 ]
-
-# Reflection questions
-REFLECTION_QUESTIONS = {
-    "novice": [
-        "How does Seega compare to other board games you've played?",
-        "What's the most challenging part about learning Seega?",
-        "Does the simplicity of the board make it easier or harder to play strategically?",
-        "Why do you think Seega uses a 5x5 grid instead of larger boards?",
-    ],
-    "beginner": [
-        "How does strategy in Seega differ from chess or checkers?",
-        "What role does capturing play in your Seega strategy?",
-        "Have you noticed patterns in how games typically develop?",
-        "How important is controlling the center of the board?",
-    ],
-    "intermediate": [
-        "What makes Seega a good game for developing logical thinking?",
-        "How has playing Seega changed your approach to other board games?",
-        "What cultural insights do you gain from traditional Sudanese games?",
-        "How might Seega strategies apply to real-life problem solving?",
-    ],
-    "advanced": [
-        "How does Seega reflect Sudanese cultural values and thinking?",
-        "What role do traditional games play in preserving cultural identity?",
-        "How might Seega be adapted for modern educational purposes?",
-        "What makes Seega unique compared to similar games worldwide?",
-    ]
-}
-
 
 def get_topic_description(topic):
     """Get a friendly description of the topic and appropriate image"""
@@ -126,39 +89,34 @@ def get_topic_description(topic):
     # Default is no image
     image_path = None
 
-    if "play" in topic_lower or "rules" in topic_lower or "how to" in topic_lower or "move" in topic_lower:
-        description = "Seega gameplay and rules"
+    if "play" in topic_lower or "rules" in topic_lower or "how to" in topic_lower or "hop" in topic_lower:
+        description = "Hejla gameplay and rules"
         image_path = RULES_IMAGE_PATH
-    elif "history" in topic_lower or "origin" in topic_lower or "past" in topic_lower or "ancient" in topic_lower:
-        description = "the history of Seega"
+    elif "history" in topic_lower or "origin" in topic_lower or "past" in topic_lower or "traditional" in topic_lower:
+        description = "the history of Hejla"
         image_path = HISTORY_IMAGE_PATH
-    elif "region" in topic_lower or "country" in topic_lower or "where" in topic_lower or "sudan" in topic_lower:
-        description = "where Seega is played"
+    elif "culture" in topic_lower or "tradition" in topic_lower or "girls" in topic_lower or "childhood" in topic_lower:
+        description = "the cultural significance of Hejla"
         image_path = CULTURAL_IMAGE_PATH
-    elif "strategy" in topic_lower or "technique" in topic_lower or "winning" in topic_lower or "capture" in topic_lower:
-        description = "Seega strategies and techniques"
+    elif "square" in topic_lower or "ground" in topic_lower or "chalk" in topic_lower:
+        description = "how to set up Hejla"
         image_path = RULES_IMAGE_PATH
-    elif "culture" in topic_lower or "tradition" in topic_lower:
-        description = "the cultural significance of Seega"
-        image_path = CULTURAL_IMAGE_PATH
-    elif "board" in topic_lower or "grid" in topic_lower or "piece" in topic_lower:
-        description = "the Seega board and pieces"
+    elif "home" in topic_lower or "winning" in topic_lower or "rules" in topic_lower:
+        description = "Hejla rules and winning"
         image_path = RULES_IMAGE_PATH
     else:
-        description = "Seega"
+        description = "Hejla"
 
     return description, image_path
-
 
 async def select_relevant_quiz_questions(topic, count=3, user_level="novice"):
     """Select quiz questions relevant to the topic of conversation and user level"""
     # Map topic keywords to categories
     keyword_to_category = {
-        "play": "rules", "rules": "rules", "how to": "rules", "move": "gameplay",
-        "strategy": "strategy", "capture": "capture", "piece": "rules",
-        "history": "history", "origin": "history", "culture": "culture",
-        "region": "history", "country": "history", "where": "history",
-        "sudan": "history", "egypt": "history", "board": "board"
+        "play": "rules", "rules": "rules", "how to": "rules", "hop": "gameplay",
+        "stone": "equipment", "chalk": "equipment", "square": "rules",
+        "girls": "culture", "tradition": "culture", "culture": "culture",
+        "win": "strategy", "home": "strategy", "line": "gameplay"
     }
 
     # Determine categories based on keywords in topic
@@ -170,7 +128,7 @@ async def select_relevant_quiz_questions(topic, count=3, user_level="novice"):
 
     # If no specific categories matched, use all categories
     if not categories:
-        categories = {"rules", "history", "culture", "strategy", "board", "gameplay", "capture"}
+        categories = {"rules", "gameplay", "culture", "equipment", "strategy", "social"}
 
     # Filter questions by selected categories
     category_questions = [q for q in QUIZ_QUESTIONS if q.get("category", "") in categories]
@@ -201,7 +159,6 @@ async def select_relevant_quiz_questions(topic, count=3, user_level="novice"):
 
     return selected
 
-
 async def send_quiz_question(question_data):
     """Send a single quiz question with option buttons"""
     # Get current question number
@@ -226,71 +183,47 @@ async def send_quiz_question(question_data):
         actions=actions
     ).send()
 
-
-async def send_reflection_question(topic):
-    """Send a reflection question based on the user's current level"""
-    # Get user level
-    user_level = cl.user_session.get("user_level", "novice")
-    user_name = cl.user_session.get("user_name", "friend")
-
-    # Get appropriate reflection questions for this level
-    level_questions = REFLECTION_QUESTIONS.get(user_level, REFLECTION_QUESTIONS["novice"])
-
-    # Select a question
-    import random
-    reflection_question = random.choice(level_questions)
-
-    # Send as a message with a more conversational tone
-    await cl.Message(
-        content=f"Hey {user_name}, I'm curious... 🤔\n\n{reflection_question}\n\n(Just type whatever comes to mind - no pressure! 😊)",
-    ).send()
-
-    # Track that we're waiting for reflection
-    cl.user_session.set("waiting_for_reflection", True)
-    cl.user_session.set("current_reflection_question", reflection_question)
-
-
 async def send_follow_up_suggestions(topic):
     """Send follow-up suggestions based on the topic"""
     # Get user level
     user_level = cl.user_session.get("user_level", "novice")
 
     # Suggest appropriate follow-ups based on topic
-    if "play" in topic or "rules" in topic or "how to" in topic or "move" in topic:
+    if "play" in topic or "rules" in topic or "how to" in topic or "hop" in topic:
         follow_ups = [
-            {"question": "What are the best opening moves in Seega?",
-             "label": "Opening strategies"},
-            {"question": "How do you capture pieces effectively?",
-             "label": "Capture techniques"},
-            {"question": "What board materials work best?",
-             "label": "Board making"}
+            {"question": "How do you draw the squares for Hejla?",
+             "label": "Drawing squares"},
+            {"question": "What's the hopping technique in Hejla?",
+             "label": "Hopping tips"},
+            {"question": "Can boys play Hejla too?",
+             "label": "Who can play?"}
         ]
-    elif "history" in topic or "origin" in topic or "past" in topic:
+    elif "culture" in topic or "girls" in topic or "tradition" in topic:
         follow_ups = [
-            {"question": "How is Seega connected to ancient games?",
-             "label": "Historical links"},
-            {"question": "Why did Seega survive through centuries?",
-             "label": "Cultural preservation"},
-            {"question": "What role did Seega play in Sudan's past?",
-             "label": "Social history"}
+            {"question": "Why is Hejla important in Sudanese culture?",
+             "label": "Cultural impact"},
+            {"question": "Where do girls usually play Hejla?",
+             "label": "Play locations"},
+            {"question": "Is Hejla played in other countries too?",
+             "label": "Regional variations"}
         ]
-    elif "strategy" in topic or "technique" in topic or "winning" in topic or "capture" in topic:
+    elif "win" in topic or "home" in topic or "strategy" in topic:
         follow_ups = [
-            {"question": "How do you control the center effectively?",
-             "label": "Center control"},
-            {"question": "What are the most powerful piece positions?",
-             "label": "Positional play"},
-            {"question": "How do you set up capture traps?",
-             "label": "Trap strategies"}
+            {"question": "How do you create a 'home' in Hejla?",
+             "label": "Creating homes"},
+            {"question": "What rules can you make for your home?",
+             "label": "Home rules"},
+            {"question": "What's the best strategy to win?",
+             "label": "Winning tips"}
         ]
     else:
         follow_ups = [
-            {"question": "How exactly do you set up a Seega board?",
-             "label": "Game setup"},
-            {"question": "What pieces work best for playing?",
-             "label": "Traditional pieces"},
-            {"question": "Is Seega good for all ages?",
-             "label": "Social play"}
+            {"question": "How do you play Hejla step by step?",
+             "label": "Basic rules"},
+            {"question": "What do you need to play Hejla?",
+             "label": "Equipment needed"},
+            {"question": "Can Hejla be played indoors?",
+             "label": "Playing locations"}
         ]
 
     # Create action buttons
@@ -319,7 +252,6 @@ async def send_follow_up_suggestions(topic):
     )
     await suggestion_msg.send()
 
-
 @cl.on_chat_start
 async def on_chat_start():
     # Initialize user session
@@ -328,8 +260,8 @@ async def on_chat_start():
     # First message
     intro_text = (
         "Hey! 👋\n\n"
-        "I'm Salam! I’m Amal (أمل), and I'm all about Seega! 🎯\n"
-        "What's your name? I'd love to chat about this awesome Sudanese board game!"
+        "I'm *Amal*, and I'm all about Hejla! 🦶\n"
+        "What's your name? I'd love to chat about this awesome Sudanese hopscotch game!"
     )
 
     # Send introduction
@@ -338,9 +270,9 @@ async def on_chat_start():
     # Create image objects and store them in user session
     try:
         opener_image = cl.Image(path=OPENER_IMAGE_PATH, name="opener", display="inline")
-        cultural_image = cl.Image(path=CULTURAL_IMAGE_PATH, name="seega_cultural", display="inline")
-        rules_image = cl.Image(path=RULES_IMAGE_PATH, name="seega_rules", display="inline")
-        history_image = cl.Image(path=HISTORY_IMAGE_PATH, name="seega_history", display="inline")
+        cultural_image = cl.Image(path=CULTURAL_IMAGE_PATH, name="hejla_cultural", display="inline")
+        rules_image = cl.Image(path=RULES_IMAGE_PATH, name="hejla_rules", display="inline")
+        history_image = cl.Image(path=HISTORY_IMAGE_PATH, name="hejla_history", display="inline")
 
         # Store media in user session
         cl.user_session.set("opener_image", opener_image)
@@ -358,12 +290,10 @@ async def on_chat_start():
     # Setup runnable
     setup_runnable()
 
-
 @cl.on_message
 async def on_message(message: cl.Message):
     # Check if we're waiting for the user's name
     waiting_for_name = cl.user_session.get("waiting_for_name", False)
-    waiting_for_reflection = cl.user_session.get("waiting_for_reflection", False)
 
     if waiting_for_name:
         # Store the user's name
@@ -377,7 +307,7 @@ async def on_message(message: cl.Message):
         # Welcome message
         welcome_text = (
             f"Nice to meet you, {user_name}! 🙌\n\n"
-            "What would you like to know about Seega? Pick something below or just ask me anything! 😊"
+            "What would you like to know about Hejla? Pick something below or just ask me anything! 😊"
         )
 
         # Send welcome message with image if available
@@ -392,28 +322,28 @@ async def on_message(message: cl.Message):
         actions = [
             cl.Action(
                 name="dynamic_suggestion",
-                payload={"question": "How do you play Seega?"},
-                label="How to play? 🎯"
+                payload={"question": "How do you play Hejla?"},
+                label="How to play? 🦶"
             ),
             cl.Action(
                 name="dynamic_suggestion",
-                payload={"question": "What materials do you need for a Seega board?"},
-                label="Making a board? 🎪"
+                payload={"question": "How do you draw the squares for Hejla?"},
+                label="Drawing squares? ➖"
             ),
             cl.Action(
                 name="dynamic_suggestion",
-                payload={"question": "What are the winning strategies in Seega?"},
-                label="Best strategies? 🧠"
+                payload={"question": "Why is Hejla popular with girls?"},
+                label="Cultural significance? 👧"
             ),
             cl.Action(
                 name="dynamic_suggestion",
-                payload={"question": "Where does Seega come from?"},
-                label="The origin story? 📚"
+                payload={"question": "What makes a 'home' in Hejla?"},
+                label="Creating homes? 🏠"
             ),
             cl.Action(
                 name="dynamic_suggestion",
-                payload={"question": "Why is Seega important in Sudanese culture?"},
-                label="Cultural significance? 🏛️"
+                payload={"question": "Can boys play Hejla too?"},
+                label="Who can play? 🤝"
             )
         ]
 
@@ -423,21 +353,6 @@ async def on_message(message: cl.Message):
 
         # Add a hint about visual explanations
         await cl.Message(content="(Ask about rules or 'how to play' and I'll show you with drawings! 🎨)").send()
-
-    elif waiting_for_reflection:
-        # Handle reflection response
-        reflection_question = cl.user_session.get("current_reflection_question", "")
-
-        # Reset waiting flags
-        cl.user_session.set("waiting_for_reflection", False)
-
-        # Acknowledge reflection
-        await cl.Message(
-            content="Thanks for sharing! 😊 Really interesting perspective.\n\nWhat else would you like to know about Seega?"
-        ).send()
-
-        # Continue conversation
-        await send_follow_up_suggestions("general")
 
     else:
         # Normal message handling
@@ -489,7 +404,6 @@ async def on_message(message: cl.Message):
         # Send follow-up suggestions
         await send_follow_up_suggestions(topic)
 
-
 # Quiz functionality
 @cl.action_callback("quiz_request")
 async def on_quiz_request(action):
@@ -510,11 +424,10 @@ async def on_quiz_request(action):
         cl.user_session.set("quiz_total", len(questions))
 
         # Start the quiz
-        await cl.Message(content="Let's test your Seega knowledge! 🎮").send()
+        await cl.Message(content="Let's test your Hejla knowledge! 🦶").send()
         await send_quiz_question(questions[0])
     else:
         await cl.Message(content="Hmm, no quiz questions ready for this topic yet. Ask me something else! 😅").send()
-
 
 @cl.action_callback("quiz_answer")
 async def on_quiz_answer(action):
@@ -573,11 +486,6 @@ async def on_quiz_answer(action):
         # After quiz is complete, show relevant follow-up suggestions
         await send_follow_up_suggestions(topic)
 
-        # Add reflection question after quiz
-        if quiz_score > 0:  # Only ask reflection if they got at least one right
-            await send_reflection_question(topic)
-
-
 # Dynamic suggestion callback
 @cl.action_callback("dynamic_suggestion")
 async def on_dynamic_suggestion_action(action):
@@ -589,26 +497,24 @@ async def on_dynamic_suggestion_action(action):
         topic_image = None
         question_lower = question.lower()
 
-        if "rules" in question_lower or "play" in question_lower or "how" in question_lower or "move" in question_lower:
+        if "rules" in question_lower or "play" in question_lower or "how" in question_lower or "hop" in question_lower:
             topic_image = cl.user_session.get("rules_image")
-        elif "materials" in question_lower or "board" in question_lower or "making" in question_lower:
+        elif "squares" in question_lower or "draw" in question_lower or "chalk" in question_lower:
             topic_image = cl.user_session.get("rules_image")
-        elif "strategies" in question_lower or "winning" in question_lower or "capture" in question_lower:
-            topic_image = cl.user_session.get("rules_image")
-        elif "come from" in question_lower or "origin" in question_lower or "where" in question_lower:
-            topic_image = cl.user_session.get("history_image")
-        elif "culture" in question_lower or "important" in question_lower or "sudanese" in question_lower:
+        elif "girls" in question_lower or "cultural" in question_lower or "traditional" in question_lower:
             topic_image = cl.user_session.get("cultural_image")
+        elif "home" in question_lower or "win" in question_lower or "strategy" in question_lower:
+            topic_image = cl.user_session.get("rules_image")
 
         # Send the appropriate image first if available
         if topic_image:
             image_topic = ""
             if topic_image == cl.user_session.get("rules_image"):
-                image_topic = "the board and rules"
+                image_topic = "the squares and rules"
             elif topic_image == cl.user_session.get("cultural_image"):
-                image_topic = "how people play it"
+                image_topic = "how girls play it"
             elif topic_image == cl.user_session.get("history_image"):
-                image_topic = "where Seega comes from"
+                image_topic = "where Hejla comes from"
 
             image_message = cl.Message(
                 content=f"Here's a pic showing {image_topic}:",
@@ -622,7 +528,3 @@ async def on_dynamic_suggestion_action(action):
 
         # Process the message
         await on_message(cl.Message(content=question))
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    cl.run(port=port, host="0.0.0.0")
