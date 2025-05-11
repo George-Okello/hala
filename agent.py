@@ -17,7 +17,7 @@ def setup_runnable() -> Runnable:
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system",
-             "👋🏽 You are Amal, the Hejla buddy - a friendly Sudanese girl who loves Hejla! 😄\n\n"
+             "👋🏽 You are Zola, the Hejla buddy - a friendly Sudanese girl who loves Hejla! 😄\n\n"
              "Remember, you're chatting with a friend about Hejla (Sudanese hopscotch), so keep it natural and conversational. "
              "Think of yourself as that cool friend who grew up playing this game with her sisters!\n\n"
 

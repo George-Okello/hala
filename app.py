@@ -261,7 +261,7 @@ async def on_chat_start():
     # First message
     intro_text = (
         "Hey! 👋\n\n"
-        "I'm *Amal*, and I'm all about Hejla! 🦶\n"
+        "I'm *Zola*, and I'm all about Hejla! 🦶\n"
         "What's your name? I'd love to chat about this awesome Sudanese hopscotch game!"
     )
 
